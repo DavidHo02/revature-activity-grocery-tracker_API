@@ -53,7 +53,7 @@ function deleteItem(itemName) {
 
     }
     else { // did find the item in grocery_list, now remove it
-        groceryList.splice(index, 1)
+        groceryList.splice(index, 1);
         logger.info(`Deleted ${itemName} from grocery list`);
     }
     writeGroceryListData();
