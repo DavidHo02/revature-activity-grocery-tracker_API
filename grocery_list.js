@@ -1,42 +1,50 @@
 const Item = require('./item');
 const fs = require('fs');
+const path = require('path');
+const { logger } = require('./util/logger');
 
-const grocery_list = JSON.parse(fs.readFileSync('data.json', 'utf-8'));
+// path to data file
+const filePath = path.join(__dirname, 'data.json');
 
-let name = 'david';
-function showGroceryList() {
-    console.log(`${name}'s grocery list:`);
-    grocery_list.forEach((item, index) => {
-        console.log(`${index + 1}. ${item.name} ${item.quantity} ($${item.price}) ${item.bought}`);
-    });
+function readGroceryListData() {
+    // if data.json does not exist
+    if(!fs.existsSync(filePath)) {
+        // create data.json with an empty list
+        fs.writeFileSync(filePath, JSON.stringify([]));
+    }
+    const data = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(data);
 }
 
-function updateGroceryListData() {
-    fs.writeFileSync('data.json', JSON.stringify(grocery_list), 'utf8', (err) => {
-        if(err) {
-            return;
-        }
-    });
+function writeGroceryListData() {
+    fs.writeFileSync('data.json', JSON.stringify(groceryList), null, 2);
+    logger.info('Grocery list updated in data.json');
 }
+
+groceryList = readGroceryListData();
 
 function addItem(name, quantity, price, bought) {
-    newItem = new Item(name, quantity, price, bought);
-    grocery_list.push(newItem);
-    updateGroceryListData();
+    newItem = new Item(
+        name, 
+        quantity, 
+        parseFloat(price).toFixed(2), 
+        bought
+    );
+    groceryList.push(newItem);
+    logger.info(`Added ${newItem.name} to grocery list`);
+    writeGroceryListData();
 }
 
-function editItem(name, quantity, price, bought) {
-    let index = searchItem(name);
-    if(index === -1) { // could not find item in grocery_list
+function togglePurchased(itemName) {
+    let index = searchItem(itemName);
+    if(index === -1) { // could not find item in groceryList
 
     }
     else { // did find the item in grocery_list, now change old values to new values
-        grocery_list.at(index).name = name;
-        grocery_list.at(index).quantity = quantity;
-        grocery_list.at(index).price = price;
-        grocery_list.at(index).bought = bought;
+        groceryList.at(index).bought = !groceryList.at(index).bought;
+        logger.info(`Set ${itemName}'s bought status as ${groceryList.at(index).bought} in the grocery list`);
     }
-    updateGroceryListData();
+    writeGroceryListData();
 }
 
 function deleteItem(itemName) {
@@ -45,19 +53,20 @@ function deleteItem(itemName) {
 
     }
     else { // did find the item in grocery_list, now remove it
-        grocery_list.splice(index, 1)
+        groceryList.splice(index, 1)
+        logger.info(`Deleted ${itemName} from grocery list`);
     }
-    updateGroceryListData();
+    writeGroceryListData();
 }
 
 function searchItem(itemName) {
-    return grocery_list.findIndex((item) => item.name == itemName);
+    return groceryList.findIndex((item) => item.name == itemName);
 }
 
 module.exports = {
-    grocery_list,
+    groceryList,
     addItem,
-    editItem,
+    togglePurchased,
     deleteItem,
 }
 
